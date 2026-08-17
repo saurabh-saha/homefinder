@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HomeFind — Buy Homes in Bangalore</title>
+<style>
+  :root {
+    --blue: #0d6efd;
+    --dark: #1a1a1a;
+    --gray: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f7f8fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+  }
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: #fff;
+  }
+  header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-wrap input.search { width: 100%; }
+  .search-suggestions {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 10px;
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 40;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .search-suggestions.visible { display: flex; }
+  .search-suggestions .chip { font-size: 12.5px; padding: 5px 12px; }
+  .logo {
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--blue);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
+  .logo span { color: var(--dark); }
+
+  .top-row {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    flex-wrap: wrap;
+  }
+  .top-row input.search { flex: 1; min-width: 200px; }
+
+  input, select {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+    font-family: inherit;
+  }
+  input:focus, select:focus { border-color: var(--blue); }
+
+  button.primary {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.primary:hover { background: #0b5ed7; }
+
+  .layout {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  aside.filters {
+    width: 250px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    box-sizing: border-box;
+    position: sticky;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* top/max-height are set inline by adjustStickyOffsets(), which measures
+       the actual (variable-height) sticky header + chip bar above it. */
+  }
+  aside.filters select, aside.filters input { max-width: 100%; }
+  .filter-details summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    margin: 18px 0 4px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    user-select: none;
+  }
+  .filter-details summary::-webkit-details-marker { display: none; }
+  .filter-details summary::before {
+    content: "▸";
+    font-size: 15px;
+    line-height: 1;
+    color: var(--dark);
+    transition: transform 0.15s;
+  }
+  .filter-details[open] summary::before { transform: rotate(90deg); }
+  .filter-details .amenities-list { padding-top: 6px; }
+  .filter-count { color: var(--blue); font-weight: 700; text-transform: none; letter-spacing: 0; }
+  #societyFilterInput { width: 100%; margin-bottom: 6px; }
+  .society-checklist {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 8px;
+  }
+  .society-checklist .checkbox-row { font-size: 13px; padding: 4px 0; }
+  .society-checklist .checkbox-row span { color: var(--gray); font-size: 11.5px; }
+  .society-checklist .empty-note { color: var(--gray); font-size: 12.5px; padding: 6px 2px; }
+  aside.filters h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    margin: 18px 0 8px;
+  }
+  aside.filters h3:first-child { margin-top: 0; }
+  .range-row { display: flex; gap: 8px; align-items: center; }
+  .range-row input { width: 100%; }
+  .range-row span { color: var(--gray); font-size: 13px; }
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    padding: 5px 0;
+    cursor: pointer;
+  }
+  .checkbox-row input { width: auto; padding: 0; }
+  select#sortBy, select#acresMin { width: 100%; }
+
+  main { flex: 1; padding: 24px 32px 60px; min-width: 0; }
+  .result-count {
+    font-size: 14px;
+    color: var(--gray);
+    margin-bottom: 16px;
+    min-height: 20px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.15s, transform 0.15s;
+    display: flex;
+    flex-direction: column;
+  }
+  .card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+  }
+  .card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: #eee;
+    display: block;
+  }
+  .card-media { position: relative; }
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    opacity: 0.75;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .carousel-arrow:hover { opacity: 1; background: rgba(0,0,0,0.65); }
+  .carousel-left { left: 8px; }
+  .carousel-right { right: 8px; }
+  .carousel-dots {
+    position: absolute;
+    bottom: 8px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    z-index: 2;
+  }
+  .carousel-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+  }
+  .carousel-dot.active { background: #fff; }
+  .card-body { padding: 14px 16px 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .card a { color: inherit; text-decoration: none; }
+  .price { font-size: 19px; font-weight: 800; color: var(--dark); }
+  .title { font-size: 15px; font-weight: 600; margin: 2px 0; color: var(--dark); }
+  .locality { font-size: 13px; color: var(--gray); }
+  .card a:hover .title { text-decoration: underline; }
+  .meta-row {
+    font-size: 13px;
+    color: var(--gray);
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .amenity-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .amenity-tag {
+    font-size: 10.5px;
+    background: #eef2ff;
+    color: #3949ab;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .empty, .loading {
+    text-align: center;
+    color: var(--gray);
+    padding: 80px 0;
+    font-size: 15px;
+  }
+
+  .chip-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 14px 32px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+  .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--dark);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--blue); }
+  .chip.active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+    font-weight: 600;
+  }
+  .chip-divider {
+    width: 1px;
+    background: var(--border);
+    margin: 2px 4px;
+  }
+  .chip-note {
+    font-size: 12px;
+    color: var(--gray);
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .header-actions { margin-left: auto; display: flex; gap: 10px; }
+  .icon-btn {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--dark);
+    position: relative;
+  }
+  .icon-btn:hover { border-color: var(--blue); }
+  .badge {
+    background: var(--blue);
+    color: #fff;
+    border-radius: 20px;
+    font-size: 11px;
+    padding: 1px 6px;
+    margin-left: 5px;
+  }
+
+  .card { position: relative; }
+  .card.seen { opacity: 0.55; }
+  .card.seen:hover { opacity: 1; }
+  .seen-badge {
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26,26,26,0.85);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    z-index: 2;
+    letter-spacing: 0.03em;
+  }
+  .card-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 2;
+  }
+  .overlay-btn {
+    background: rgba(255,255,255,0.92);
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .overlay-btn.active { background: var(--blue); color: #fff; }
+  .compare-check {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.92);
+    border-radius: 8px;
+    padding: 5px 9px 5px 7px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .compare-check input { width: auto; margin: 0; }
+
+  .compare-tray {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--dark);
+    color: #fff;
+    padding: 14px 32px;
+    display: none;
+    align-items: center;
+    gap: 16px;
+    z-index: 50;
+  }
+  .compare-tray.visible { display: flex; }
+  .compare-tray button {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .compare-tray .go-btn { background: var(--blue); color: #fff; }
+  .compare-tray .clear-btn { background: transparent; color: #cbd5e1; text-decoration: underline; }
+
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 30px;
+  }
+  .modal-backdrop.visible { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    max-width: 1100px;
+    width: 100%;
+    max-height: 88vh;
+    overflow: auto;
+    padding: 24px 28px;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .modal-header h2 { font-size: 18px; margin: 0; }
+  .modal-header button {
+    border: none;
+    background: var(--bg);
+    border-radius: 8px;
+    width: 32px; height: 32px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  table.compare-table { border-collapse: collapse; width: 100%; }
+  table.compare-table th, table.compare-table td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    font-size: 13.5px;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.compare-table th { background: var(--bg); width: 140px; }
+  table.compare-table a { color: inherit; text-decoration: none; display: block; }
+  table.compare-table a:hover div { text-decoration: underline; }
+  table.compare-table img {
+    width: 100%; max-width: 200px; height: 110px;
+    object-fit: cover; border-radius: 8px; margin-bottom: 6px;
+  }
+  .compare-remove {
+    font-size: 11px; color: #dc2626; cursor: pointer; text-decoration: underline;
+    background: none; border: none; padding: 0; margin-top: 4px;
+  }
+  .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+
+  .suggest-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); padding-bottom: 8px; }
+  .suggest-section h3 { font-size: 14px; margin: 0 0 12px; }
+  .suggest-wrap { margin-bottom: 22px; }
+  .suggest-wrap .card { height: 100%; }
+  .suggest-wrap .sc-dismiss-icon { color: var(--gray); }
+  .suggest-wrap .sc-dismiss-icon:hover { background: #dc2626; color: #fff; }
+  .suggest-wrap .sc-why {
+    font-size: 11.5px;
+    color: var(--blue);
+    font-weight: 600;
+    margin-top: 8px;
+    padding: 0 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="sticky-top">
+<header>
+  <div class="logo">Home<span>Find</span></div>
+  <div class="top-row">
+    <div class="search-wrap">
+      <input type="text" class="search" placeholder="Search society / locality (e.g. Sattva, Varthur)" autocomplete="off">
+      <div class="search-suggestions" id="searchSuggestions"></div>
+    </div>
+    <input type="number" step="0.1" class="price_max" placeholder="Max price (Cr)" style="width:140px">
+    <input type="number" class="bedrooms" placeholder="BHK" style="width:100px">
+    <button class="primary" id="searchBtn">Search</button>
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" id="listBtn">♡ My List<span class="badge" id="listBadge">0</span></button>
+  </div>
+</header>
+
+<div class="chip-bar">
+  <div class="chip-group" id="bhkChips">
+    <button class="chip" data-bedrooms="2">2 BHK</button>
+    <button class="chip" data-bedrooms="3">3 BHK</button>
+    <button class="chip" data-bedrooms="4">4 BHK</button>
+  </div>
+  <div class="chip-divider"></div>
+  <div class="chip-group" id="priceChips">
+    <button class="chip" data-price="0.5">Under 50L</button>
+    <button class="chip" data-price="1">Under 1 Cr</button>
+    <button class="chip" data-price="1.5">Under 1.5 Cr</button>
+    <button class="chip" data-price="2">Under 2 Cr</button>
+  </div>
+  <div class="chip-divider"></div>
+  <div class="chip-group">
+    <button class="chip" id="highFloorChip">High floor (5+)</button>
+    <button class="chip" id="lowDensityChip">Low density (5+ acres)</button>
+    <button class="chip" id="hasPhotosChip">Has photos</button>
+    <button class="chip" data-amenity-chip="swimming_pool">Swimming pool</button>
+    <button class="chip" data-amenity-chip="gym">Gym</button>
+    <button class="chip" data-amenity-chip="clubhouse">Clubhouse</button>
+    <button class="chip" id="vastuChip">Vastu (East/North facing)</button>
+  </div>
+  <div class="chip-note" id="vastuNote"></div>
+</div>
+</div>
+
+<div class="layout">
+  <aside class="filters">
+    <h3>Floor</h3>
+    <div class="range-row">
+      <input type="number" id="floorMin" placeholder="Min">
+      <span>–</span>
+      <input type="number" id="floorMax" placeholder="Max">
+    </div>
+
+    <h3>Society size (low density)</h3>
+    <select id="acresMin">
+      <option value="">Any size</option>
+      <option value="1">1+ acres</option>
+      <option value="2">2+ acres (spacious)</option>
+      <option value="5">5+ acres (large campus)</option>
+      <option value="10">10+ acres (township-like)</option>
+    </select>
+
+    <h3>Photos</h3>
+    <label class="checkbox-row"><input type="checkbox" id="hasPhotosOnly"> Has real photos (not just 1 image)</label>
+
+    <h3>Society</h3>
+    <input type="text" id="societyFilterInput" placeholder="Search societies…">
+    <div class="society-checklist" id="societyChecklist"></div>
+    <div class="chip-note" id="societySortNote" style="margin-top:6px">
+      Sorted by listings on platform ·
+      <a href="#" id="societySortToggle" style="color:var(--blue)">sort by size instead</a>
+    </div>
+
+    <details class="filter-details" id="amenitiesDetails">
+      <summary>Amenities <span class="filter-count" id="amenitiesCount"></span></summary>
+      <div class="amenities-list">
+        <label class="checkbox-row"><input type="checkbox" data-amenity="swimming_pool"> Swimming pool</label>
+        <label class="checkbox-row"><input type="checkbox" data-amenity="gym"> Gym</label>
+        <label class="checkbox-row"><input type="checkbox" data-amenity="clubhouse"> Clubhouse</label>
+        <label class="checkbox-row"><input type="checkbox" data-amenity="children_play_area"> Kids' play area</label>
+        <label class="checkbox-row"><input type="checkbox" data-amenity="power_backup"> Power backup</label>
+        <label class="checkbox-row"><input type="checkbox" data-amenity="security"> 24x7 security</label>
+        <label class="checkbox-row"><input type="checkbox" data-amenity="lift"> Lift</label>
+        <label class="checkbox-row"><input type="checkbox" data-amenity="park"> Park / garden</label>
+        <label class="checkbox-row"><input type="checkbox" data-amenity="visitors_parking"> Visitor parking</label>
+      </div>
+    </details>
+
+    <h3>Sort by</h3>
+    <select id="sortBy">
+      <option value="">Relevance</option>
+      <option value="price_asc">Price: low to high</option>
+      <option value="price_desc">Price: high to low</option>
+      <option value="area_desc">Area: largest first</option>
+      <option value="acres_desc">Society size: largest first</option>
+    </select>
+  </aside>
+
+  <main>
+    <div class="result-count" id="resultCount"></div>
+    <div class="chip-note" style="margin-bottom:12px">
+      <span id="cacheNote"></span> · <a href="#" id="refreshLink" style="color:var(--blue)">Refresh listings</a>
+    </div>
+    <div id="results"><div class="loading">Loading homes…</div></div>
+  </main>
+</div>
+
+<div class="compare-tray" id="compareTray">
+  <span id="compareCount">0 selected</span>
+  <button class="go-btn" id="compareGoBtn">Compare</button>
+  <button class="clear-btn" id="compareClearBtn">Clear</button>
+</div>
+
+<div class="modal-backdrop" id="compareModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Compare homes</h2>
+      <button id="closeCompareModal">✕</button>
+    </div>
+    <div id="compareModalBody"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="listModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>My List</h2>
+      <button id="closeListModal">✕</button>
+    </div>
+    <div id="listModalBody"></div>
+  </div>
+</div>
+
+<script>
+const PROPERTIES_API = "https://api.ivy.homes/django/api/v2/properties/paginated/";
+const PROJECTS_API = "https://api.ivy.homes/api/v1/projects/";
+const PROPERTY_DETAIL_API = "https://api.ivy.homes/api/v1/properties/";
+const VASTU_FACINGS = ["East", "North", "North East", "North-East"];
+const VASTU_FACING_CAP = 100; // avoid hammering the API on huge result sets
+const DISPLAY_DETAIL_LIMIT = 30; // always show age/facing on at least the first page of results
+const PROPERTIES_TTL_MS = 10 * 60 * 1000;   // listings/prices can change; refresh every 10 min
+const PROJECTS_TTL_MS = 24 * 60 * 60 * 1000; // amenities/acreage barely change; cache for a day
+const DETAIL_TTL_MS = 24 * 60 * 60 * 1000;   // facing/OC date never change once built
+
+let projectsById = {};
+let vastuOnly = false;
+let societyIndex = []; // [{ name, projectId, acres, count }], rebuilt each search from the full dataset
+let societySortMode = "count"; // "count" | "acres"
+let allPropertiesById = {}; // remembers every property we've ever seen, for Compare/List lookups
+
+// localStorage can throw (e.g. sandboxed/data: preview contexts, some
+// privacy modes) — fall back to an in-memory store so the app never dies.
+const memoryStore = {};
+const safeStorage = {
+  getItem(k) { try { return localStorage.getItem(k); } catch (e) { return memoryStore[k] ?? null; } },
+  setItem(k, v) { try { localStorage.setItem(k, v); } catch (e) { memoryStore[k] = v; } },
+};
+
+function readCache(key, ttlMs) {
+  const raw = safeStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.ts > ttlMs) return null;
+    return parsed.data;
+  } catch (e) { return null; }
+}
+function writeCache(key, data) {
+  safeStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+}
+
+const selectedSocieties = new Set(JSON.parse(safeStorage.getItem("hf_societies") || "[]"));
+function persistSocieties() { safeStorage.setItem("hf_societies", JSON.stringify([...selectedSocieties])); }
+
+const compareIds = new Set(JSON.parse(safeStorage.getItem("hf_compare") || "[]"));
+const listIds = new Set(JSON.parse(safeStorage.getItem("hf_list") || "[]"));
+const seenIds = new Set(JSON.parse(safeStorage.getItem("hf_seen") || "[]"));
+function persistSeen() { safeStorage.setItem("hf_seen", JSON.stringify([...seenIds])); }
+function persistCompare() { safeStorage.setItem("hf_compare", JSON.stringify([...compareIds])); }
+function persistList() { safeStorage.setItem("hf_list", JSON.stringify([...listIds])); }
+
+function getFilterState() {
+  return {
+    search: document.querySelector(".search").value,
+    price_max: document.querySelector(".price_max").value,
+    bedrooms: document.querySelector(".bedrooms").value,
+    floorMin: document.getElementById("floorMin").value,
+    floorMax: document.getElementById("floorMax").value,
+    acresMin: document.getElementById("acresMin").value,
+    sortBy: document.getElementById("sortBy").value,
+    amenities: getCheckedAmenities(),
+    hasPhotosOnly: document.getElementById("hasPhotosOnly").checked,
+    vastuOnly,
+  };
+}
+
+// Filters live in both localStorage (so this tab remembers them) and the
+// URL query string (so the current search can be copy-pasted and shared).
+function persistFilters() {
+  const state = getFilterState();
+  safeStorage.setItem("hf_filters", JSON.stringify(state));
+
+  const params = new URLSearchParams();
+  if (state.search) params.set("search", state.search);
+  if (state.price_max) params.set("price_max", state.price_max);
+  if (state.bedrooms) params.set("bedrooms", state.bedrooms);
+  if (state.floorMin) params.set("floor_min", state.floorMin);
+  if (state.floorMax) params.set("floor_max", state.floorMax);
+  if (state.acresMin) params.set("acres_min", state.acresMin);
+  if (state.sortBy) params.set("sort", state.sortBy);
+  if (state.amenities.length) params.set("amenities", state.amenities.join(","));
+  if (state.vastuOnly) params.set("vastu", "1");
+  const qs = params.toString();
+  try {
+    history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
+  } catch (e) { /* sandboxed/opaque-origin contexts (e.g. data: URLs) disallow history writes */ }
+}
+
+function parseFiltersFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  if (![...params.keys()].length) return null;
+  return {
+    search: params.get("search") || "",
+    price_max: params.get("price_max") || "",
+    bedrooms: params.get("bedrooms") || "",
+    floorMin: params.get("floor_min") || "",
+    floorMax: params.get("floor_max") || "",
+    acresMin: params.get("acres_min") || "",
+    sortBy: params.get("sort") || "",
+    amenities: (params.get("amenities") || "").split(",").filter(Boolean),
+    vastuOnly: params.get("vastu") === "1",
+  };
+}
+
+// A shared link (URL params) wins over whatever this tab remembered locally.
+const savedFilters = parseFiltersFromURL() || JSON.parse(safeStorage.getItem("hf_filters") || "{}");
+
+async function loadProjects(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = readCache("hf_projects_cache_v2", PROJECTS_TTL_MS);
+    if (cached) { projectsById = cached; return; }
+  }
+  // Dropping is_project_page_live=true is deliberate: that filter only
+  // covers ~60 of the 150+ projects actually referenced by "For Sale"
+  // listings, which is why acreage/amenities were missing on most cards.
+  // This endpoint also ignores page/page_size entirely and always returns
+  // every project (616) in one response, so a single fetch is enough.
+  projectsById = {};
+  const resp = await fetch(`${PROJECTS_API}?page_size=1000`);
+  const payload = await resp.json();
+  (payload.data || []).forEach(proj => { projectsById[proj.id] = proj; });
+  writeCache("hf_projects_cache_v2", projectsById);
+}
+
+// Fetches every "For Sale" listing exactly once (paginated, 200/page) and
+// caches the raw result. All search/price/BHK/floor/etc. filtering happens
+// client-side over this cached set, so chip clicks and searches after the
+// first load don't hit the API at all until the cache expires.
+async function loadAllForSaleProperties(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = readCache("hf_properties_cache", PROPERTIES_TTL_MS);
+    if (cached) return cached;
+  }
+  let page = 1;
+  let all = [];
+  const params = new URLSearchParams({ page_size: 200, property_status: "For Sale" });
+  while (page <= 5) {
+    params.set("page", page);
+    const resp = await fetch(`${PROPERTIES_API}?${params.toString()}`);
+    const payload = await resp.json();
+    all = all.concat(payload.data || []);
+    if (!(payload.meta || {}).has_next) break;
+    page++;
+  }
+  writeCache("hf_properties_cache", all);
+  return all;
+}
+
+function cacheAgeLabel() {
+  const raw = safeStorage.getItem("hf_properties_cache");
+  if (!raw) return "";
+  try {
+    const mins = Math.round((Date.now() - JSON.parse(raw).ts) / 60000);
+    return mins < 1 ? "just now" : `${mins} min ago`;
+  } catch (e) { return ""; }
+}
+
+function getCheckedAmenities() {
+  return Array.from(document.querySelectorAll("[data-amenity]"))
+    .filter(el => el.checked)
+    .map(el => el.dataset.amenity);
+}
+
+async function runSearch(forceRefresh = false) {
+  const search = document.querySelector(".search").value.trim();
+  const priceMax = document.querySelector(".price_max").value.trim();
+  const bedrooms = document.querySelector(".bedrooms").value.trim();
+  const floorMin = document.getElementById("floorMin").value.trim();
+  const floorMax = document.getElementById("floorMax").value.trim();
+  const acresMin = document.getElementById("acresMin").value;
+  const sortBy = document.getElementById("sortBy").value;
+  const amenities = getCheckedAmenities();
+  const hasPhotosOnly = document.getElementById("hasPhotosOnly").checked;
+
+  persistFilters();
+  refreshChipStates();
+
+  const resultsEl = document.getElementById("results");
+  const countEl = document.getElementById("resultCount");
+  const vastuNote = document.getElementById("vastuNote");
+  resultsEl.innerHTML = '<div class="loading">Loading homes…</div>';
+  countEl.textContent = "";
+  vastuNote.textContent = "";
+
+  try {
+    await loadProjects(forceRefresh);
+    let properties = await loadAllForSaleProperties(forceRefresh);
+    document.getElementById("cacheNote").textContent = `Listings cached ${cacheAgeLabel()}`;
+
+    properties = properties.filter(p => p.price);
+
+    buildSocietyIndex(properties);
+
+    // Search/price/BHK are filtered client-side against the cached full
+    // dataset instead of re-querying the API on every keystroke/chip click.
+    if (search) {
+      const s = search.toLowerCase();
+      properties = properties.filter(p =>
+        (p.property_title || "").toLowerCase().includes(s) ||
+        (p.project && (p.project.locality || "").toLowerCase().includes(s))
+      );
+    }
+    if (priceMax) {
+      const max = Math.round(parseFloat(priceMax) * 1e7);
+      properties = properties.filter(p => p.price <= max);
+    }
+    if (bedrooms) properties = properties.filter(p => p.bedrooms === parseInt(bedrooms));
+
+    // Enrich each property with its project's amenities/acres, then apply
+    // the filters the live ivy.homes site doesn't expose: floor range,
+    // society size, and specific amenities.
+    properties = properties.map(p => ({
+      ...p,
+      _project: (p.project && projectsById[p.project.id]) || null,
+    }));
+
+    if (floorMin) properties = properties.filter(p => p.floor !== null && p.floor >= parseInt(floorMin));
+    if (floorMax) properties = properties.filter(p => p.floor !== null && p.floor <= parseInt(floorMax));
+    if (acresMin) properties = properties.filter(p => p._project && p._project.total_area_in_acres >= parseFloat(acresMin));
+    if (amenities.length) {
+      properties = properties.filter(p => p._project && amenities.every(a => p._project[a]));
+    }
+    if (hasPhotosOnly) properties = properties.filter(p => getPropertyImages(p).length > 1);
+    if (selectedSocieties.size) properties = properties.filter(p => p.project && selectedSocieties.has(p.project.id));
+
+    if (sortBy === "price_asc") properties.sort((a, b) => a.price - b.price);
+    else if (sortBy === "price_desc") properties.sort((a, b) => b.price - a.price);
+    else if (sortBy === "area_desc") properties.sort((a, b) => (b.area || 0) - (a.area || 0));
+    else if (sortBy === "acres_desc") properties.sort((a, b) => ((b._project && b._project.total_area_in_acres) || 0) - ((a._project && a._project.total_area_in_acres) || 0));
+
+    // Facing (for Vastu) and building age both live only on the per-listing
+    // detail endpoint, not the bulk list. Filtering by Vastu needs facing on
+    // every candidate, so it's gated by a cap; but *displaying* age/facing
+    // just needs the first page of visible cards, so that always runs
+    // regardless of how many total results matched.
+    if (vastuOnly) {
+      if (properties.length <= VASTU_FACING_CAP) {
+        resultsEl.innerHTML = '<div class="loading">Checking facing direction for each home…</div>';
+        const details = await Promise.all(properties.map(p => fetchPropertyDetail(p.id).catch(() => null)));
+        properties.forEach((p, i) => applyDetail(p, details[i]));
+        properties = properties.filter(p => p._facing && VASTU_FACINGS.includes(p._facing));
+      } else {
+        vastuNote.textContent =
+          `Vastu filter needs a per-listing lookup — narrow your search below ${VASTU_FACING_CAP} homes ` +
+          `(currently ${properties.length}) to apply it.`;
+      }
+    }
+
+    const toEnrich = properties.slice(0, DISPLAY_DETAIL_LIMIT).filter(p => p._facing === undefined);
+    if (toEnrich.length) {
+      const details = await Promise.all(toEnrich.map(p => fetchPropertyDetail(p.id).catch(() => null)));
+      toEnrich.forEach((p, i) => applyDetail(p, details[i]));
+    }
+    if (!vastuOnly && properties.length > DISPLAY_DETAIL_LIMIT) {
+      vastuNote.textContent = `Showing age & facing for the first ${DISPLAY_DETAIL_LIMIT} results — narrow your search to see them on the rest.`;
+    }
+
+    properties.forEach(p => { allPropertiesById[p.id] = p; });
+
+    countEl.textContent = `${properties.length} homes found${search ? ` for "${search}"` : ""}`;
+
+    if (!properties.length) {
+      resultsEl.innerHTML = '<div class="empty">No homes matched your filters. Try widening your search.</div>';
+      return;
+    }
+
+    resultsEl.innerHTML = `<div class="grid">${properties.map(cardHtml).join("")}</div>`;
+    wireCardOverlays();
+  } catch (err) {
+    resultsEl.innerHTML = `<div class="empty">Something went wrong fetching listings. ${err}</div>`;
+  } finally {
+    // The sticky header's height can change between searches (chip bar
+    // notes appearing/disappearing), so re-measure the sidebar's offset.
+    if (typeof adjustStickyOffsets === "function") adjustStickyOffsets();
+  }
+}
+
+async function fetchPropertyDetail(propertyId) {
+  // v2: also carries the full gallery — the bulk list truncates every
+  // listing's gallery to 4 photos, but this per-listing endpoint returns
+  // all of them (the same set ivy.homes' own gallery modal shows).
+  const cacheKey = `hf_detail_v2_${propertyId}`;
+  const cached = readCache(cacheKey, DETAIL_TTL_MS);
+  if (cached) return cached;
+  const resp = await fetch(`${PROPERTY_DETAIL_API}${propertyId}/`);
+  const payload = await resp.json();
+  const detail = payload.data
+    ? { facing: payload.data.facing, date_of_oc: payload.data.date_of_oc, gallery: payload.data.gallery || [] }
+    : null;
+  if (detail) writeCache(cacheKey, detail);
+  return detail;
+}
+
+function applyDetail(p, detail) {
+  if (!detail) return;
+  p._facing = detail.facing;
+  p._ageText = ageText(detail.date_of_oc);
+  if (detail.gallery && detail.gallery.length) p._fullGallery = detail.gallery;
+}
+
+function ageText(dateOfOc) {
+  if (!dateOfOc) return null;
+  const years = (Date.now() - new Date(dateOfOc).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+  if (years < 1) return "Under 1 yr old";
+  return `${Math.floor(years)} yrs old`;
+}
+
+const AMENITY_LABELS = {
+  swimming_pool: "Pool", gym: "Gym", clubhouse: "Clubhouse",
+  children_play_area: "Kids' area", power_backup: "Power backup",
+  security: "24x7 security", lift: "Lift", park: "Park", visitors_parking: "Visitor parking",
+};
+
+// _fullGallery (from the per-listing detail endpoint) has every photo; the
+// bulk list's own `gallery` field is truncated to 4. Prefer the full one
+// once it's been fetched (main results + suggestions both enrich a capped
+// set of visible cards with it — see applyDetail/DISPLAY_DETAIL_LIMIT).
+// Groups the current (price-only-filtered) dataset by society/project so
+// the "Browse by society" dropdown and the search typeahead can both work
+// off real platform inventory — name, campus size, and how many homes are
+// actually listed right now.
+function buildSocietyIndex(properties) {
+  const byProject = new Map();
+  properties.forEach(p => {
+    if (!p.project) return;
+    const projectId = p.project.id;
+    if (!byProject.has(projectId)) {
+      byProject.set(projectId, {
+        name: p.project.project_name || p.project.locality || "Unknown",
+        projectId,
+        acres: (projectsById[projectId] && projectsById[projectId].total_area_in_acres) || null,
+        count: 0,
+      });
+    }
+    byProject.get(projectId).count++;
+  });
+  societyIndex = [...byProject.values()];
+  renderSocietyPicker();
+}
+
+const SOCIETY_LIST_LIMIT = 30; // show only the top matches, not all 150+ at once
+
+// Renders the multi-select society checklist: sorted by count/acres, filtered
+// by whatever's typed into the search-societies box, capped to the top N so
+// it stays a quick pick-list rather than a wall of 150+ checkboxes.
+function renderSocietyPicker() {
+  const box = document.getElementById("societyChecklist");
+  const filterText = document.getElementById("societyFilterInput").value.trim().toLowerCase();
+
+  let list = societyIndex;
+  if (filterText) list = list.filter(s => s.name.toLowerCase().includes(filterText));
+  list = [...list].sort((a, b) =>
+    societySortMode === "acres" ? (b.acres || 0) - (a.acres || 0) : b.count - a.count
+  );
+  const shown = list.slice(0, SOCIETY_LIST_LIMIT);
+
+  if (!shown.length) {
+    box.innerHTML = '<div class="empty-note">No societies match.</div>';
+    return;
+  }
+
+  box.innerHTML = shown.map(s => `
+    <label class="checkbox-row">
+      <input type="checkbox" data-society-id="${s.projectId}" ${selectedSocieties.has(s.projectId) ? "checked" : ""}>
+      ${escapeHtml(s.name)} <span>— ${s.count} home${s.count === 1 ? "" : "s"}${s.acres ? `, ${s.acres} ac` : ""}</span>
+    </label>
+  `).join("") + (list.length > SOCIETY_LIST_LIMIT
+    ? `<div class="empty-note">+ ${list.length - SOCIETY_LIST_LIMIT} more — refine your search to narrow down</div>`
+    : "");
+
+  box.querySelectorAll("[data-society-id]").forEach(cb => {
+    cb.addEventListener("change", () => {
+      const id = parseInt(cb.dataset.societyId);
+      if (cb.checked) selectedSocieties.add(id); else selectedSocieties.delete(id);
+      persistSocieties();
+      runSearch();
+    });
+  });
+}
+
+function renderSearchSuggestions(query) {
+  const box = document.getElementById("searchSuggestions");
+  if (!query) { box.classList.remove("visible"); box.innerHTML = ""; return; }
+  const q = query.toLowerCase();
+  const matches = societyIndex
+    .filter(s => s.name.toLowerCase().includes(q))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20);
+  if (!matches.length) { box.classList.remove("visible"); box.innerHTML = ""; return; }
+  box.innerHTML = matches.map(s =>
+    `<button type="button" class="chip" data-society="${escapeHtml(s.name)}">${escapeHtml(s.name)} (${s.count})</button>`
+  ).join("");
+  box.classList.add("visible");
+  box.querySelectorAll("[data-society]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelector(".search").value = btn.dataset.society;
+      box.classList.remove("visible");
+      runSearch();
+    });
+  });
+}
+
+function getPropertyImages(p) {
+  const rawImages = [];
+  if (p.main_image && p.main_image["720"]) rawImages.push(p.main_image["720"]);
+  (p._fullGallery || p.gallery || []).forEach(g => { if (g.full_image) rawImages.push(g.full_image); });
+  return [...new Set(rawImages)].slice(0, 10);
+}
+
+function cardHtml(p) {
+  const images = getPropertyImages(p);
+  const imagesAttr = JSON.stringify(images).replace(/"/g, "&quot;");
+
+  const priceHtml = `₹ ${(p.price / 1e7).toFixed(2)} Cr`;
+  const locality = p.project ? `${p.project.locality || ""}, ${p.project.city_zone || ""} Bangalore` : "";
+  const area = p.area ? Math.round(p.area) : "";
+  const acres = p._project ? p._project.total_area_in_acres : null;
+
+  const amenityTags = p._project
+    ? Object.keys(AMENITY_LABELS).filter(k => p._project[k]).slice(0, 4)
+        .map(k => `<span class="amenity-tag">${AMENITY_LABELS[k]}</span>`).join("")
+    : "";
+
+  const seen = seenIds.has(p.id);
+
+  return `
+    <div class="card ${seen ? "seen" : ""}" data-id="${p.id}">
+      ${seen ? '<span class="seen-badge">SEEN</span>' : ""}
+      <div class="card-overlay">
+        <label class="compare-check">
+          <input type="checkbox" class="compare-toggle" data-id="${p.id}" ${compareIds.has(p.id) ? "checked" : ""}>
+          Compare
+        </label>
+        <button class="overlay-btn save-toggle ${listIds.has(p.id) ? "active" : ""}" data-id="${p.id}">
+          ${listIds.has(p.id) ? "♥" : "♡"}
+        </button>
+      </div>
+      <div class="card-media" data-images="${imagesAttr}" data-idx="0">
+        <a href="${p.property_url}" target="_blank" rel="noopener" class="mark-seen" data-id="${p.id}">
+          <img class="card-img" src="${images[0] || ""}" alt="${escapeHtml(p.property_title)}" loading="lazy">
+        </a>
+        ${images.length > 1 ? `
+          <button class="carousel-arrow carousel-left" data-dir="-1" aria-label="Previous photo">‹</button>
+          <button class="carousel-arrow carousel-right" data-dir="1" aria-label="Next photo">›</button>
+          <div class="carousel-dots">${images.map((_, i) => `<span class="carousel-dot${i === 0 ? " active" : ""}"></span>`).join("")}</div>
+        ` : ""}
+      </div>
+      <a href="${p.property_url}" target="_blank" rel="noopener" class="mark-seen" data-id="${p.id}">
+        <div class="card-body">
+          <div class="price">${priceHtml}</div>
+          <div class="title">${escapeHtml(p.property_title || "")}</div>
+          <div class="locality">${escapeHtml(locality)}${acres ? ` · ${acres} acre campus` : ""}</div>
+          <div class="meta-row">
+            <span>${p.bedrooms || "-"} BHK</span>
+            <span>·</span>
+            <span>${area} sq.ft.</span>
+            ${p.floor ? `<span>·</span><span>Floor ${p.floor}</span>` : ""}
+            ${p._facing ? `<span>·</span><span>${p._facing} facing</span>` : ""}
+            ${p._ageText ? `<span>·</span><span>${p._ageText}</span>` : ""}
+          </div>
+          ${amenityTags ? `<div class="amenity-tags">${amenityTags}</div>` : ""}
+        </div>
+      </a>
+    </div>
+  `;
+}
+
+function markSeen(id) {
+  if (seenIds.has(id)) return;
+  seenIds.add(id);
+  persistSeen();
+  document.querySelectorAll(`.card[data-id="${id}"]`).forEach(card => {
+    card.classList.add("seen");
+    if (!card.querySelector(".seen-badge")) {
+      card.insertAdjacentHTML("afterbegin", '<span class="seen-badge">SEEN</span>');
+    }
+  });
+}
+
+function wireCarousels(root) {
+  root.querySelectorAll(".carousel-arrow").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const media = btn.closest(".card-media");
+      const images = JSON.parse(media.dataset.images);
+      if (!images.length) return;
+      const idx = (parseInt(media.dataset.idx) + parseInt(btn.dataset.dir) + images.length) % images.length;
+      media.dataset.idx = idx;
+      media.querySelector(".card-img").src = images[idx];
+      media.querySelectorAll(".carousel-dot").forEach((dot, i) => dot.classList.toggle("active", i === idx));
+    });
+  });
+}
+
+function wireCardOverlays() {
+  wireCarousels(document);
+  document.querySelectorAll(".mark-seen").forEach(el => {
+    el.addEventListener("click", () => markSeen(parseInt(el.dataset.id)));
+  });
+  document.querySelectorAll(".compare-toggle").forEach(el => {
+    el.addEventListener("click", e => e.stopPropagation());
+    el.addEventListener("change", () => {
+      const id = parseInt(el.dataset.id);
+      if (el.checked) compareIds.add(id); else compareIds.delete(id);
+      persistCompare();
+      updateCompareTray();
+    });
+  });
+  document.querySelectorAll(".save-toggle").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = parseInt(el.dataset.id);
+      if (listIds.has(id)) listIds.delete(id); else listIds.add(id);
+      persistList();
+      el.classList.toggle("active");
+      el.textContent = listIds.has(id) ? "♥" : "♡";
+      updateListBadge();
+    });
+  });
+  updateCompareTray();
+}
+
+function updateCompareTray() {
+  const tray = document.getElementById("compareTray");
+  document.getElementById("compareCount").textContent = `${compareIds.size} selected`;
+  tray.classList.toggle("visible", compareIds.size > 0);
+}
+
+function updateListBadge() {
+  document.getElementById("listBadge").textContent = listIds.size;
+}
+
+const COMPARE_ROWS = [
+  ["Price", p => `₹ ${(p.price / 1e7).toFixed(2)} Cr`],
+  ["BHK", p => p.bedrooms || "-"],
+  ["Area", p => p.area ? `${Math.round(p.area)} sq.ft.` : "-"],
+  ["Floor", p => p.floor ?? "-"],
+  ["Age", p => p._ageText || "-"],
+  ["Facing", p => p._facing || "-"],
+  ["Locality", p => p.project ? `${p.project.locality || ""}, ${p.project.city_zone || ""}` : "-"],
+  ["Society size", p => p._project ? `${p._project.total_area_in_acres} acres` : "-"],
+  ["Total units", p => p._project ? p._project.total_units : "-"],
+  ["Amenities", p => p._project ? Object.keys(AMENITY_LABELS).filter(k => p._project[k]).map(k => AMENITY_LABELS[k]).join(", ") || "-" : "-"],
+];
+
+// Scores every candidate against the currently-compared set on price
+// closeness, BHK match, and locality match, then returns the top candidates
+// with a human-readable reason. Excludes anything already in the comparison
+// AND anything from a society already represented there (or already picked
+// as a suggestion) — comparing two units in the same building isn't useful.
+function scoreSuggestions(compareProps, candidates) {
+  const avgPrice = compareProps.reduce((s, p) => s + p.price, 0) / compareProps.length;
+  const bhkSet = new Set(compareProps.map(p => p.bedrooms));
+  const localitySet = new Set(compareProps.map(p => p.project && p.project.locality).filter(Boolean));
+  const compareIdSet = new Set(compareProps.map(p => p.id));
+  const compareProjectIds = new Set(compareProps.map(p => p.project && p.project.id).filter(Boolean));
+
+  const scored = candidates
+    .filter(p => p.price && !compareIdSet.has(p.id) && !(p.project && compareProjectIds.has(p.project.id)) && !seenIds.has(p.id))
+    .map(p => {
+      const priceDiff = Math.abs(p.price - avgPrice) / avgPrice;
+      const bhkMatch = bhkSet.has(p.bedrooms);
+      const localityMatch = p.project && localitySet.has(p.project.locality);
+      const score = priceDiff - (bhkMatch ? 0.3 : 0) - (localityMatch ? 0.3 : 0);
+      const why = [
+        localityMatch ? "same locality" : null,
+        bhkMatch ? `${p.bedrooms} BHK match` : null,
+        priceDiff < 0.15 ? "similar price" : null,
+      ].filter(Boolean).join(" · ") || "close match";
+      return { p, score, why };
+    })
+    .sort((a, b) => a.score - b.score);
+
+  // One suggestion per society, so the list stays diverse rather than
+  // showing several units from the same building back to back.
+  const seenProjects = new Set();
+  const deduped = [];
+  for (const s of scored) {
+    const projectId = s.p.project && s.p.project.id;
+    if (projectId && seenProjects.has(projectId)) continue;
+    if (projectId) seenProjects.add(projectId);
+    deduped.push(s);
+  }
+  return deduped;
+}
+
+// Reuses the exact same card component as the main results grid, so a
+// suggestion looks and behaves identically (Compare checkbox, ♡ save,
+// amenity tags) — just with a "why this" line appended underneath.
+function suggestCardHtml(p, why) {
+  // Slot the dismiss icon into the card's own overlay row, right next to
+  // the ♡ save button, instead of bolting a separate control underneath.
+  const dismissBtn = `<button class="overlay-btn sc-dismiss-icon" data-dismiss-id="${p.id}" title="Not interested">✕</button>`;
+  const saveBtnRegex = new RegExp(`(<button class="overlay-btn save-toggle[^"]*" data-id="${p.id}">[\\s\\S]*?<\\/button>)`);
+  const html = cardHtml(p).replace(saveBtnRegex, `<div style="display:flex;gap:6px">${dismissBtn}$1</div>`);
+  return `
+    <div class="suggest-wrap">
+      ${html}
+      <div class="sc-why">${escapeHtml(why)}</div>
+    </div>
+  `;
+}
+
+let suggestOffset = 0;
+let lastScoredSuggestions = [];
+
+async function renderSuggestionBatch(container, allProps) {
+  const n = lastScoredSuggestions.length;
+  if (!n) { container.innerHTML = ""; return; }
+
+  const batch = [];
+  for (let i = 0; i < Math.min(3, n); i++) {
+    batch.push(lastScoredSuggestions[(suggestOffset + i) % n]);
+  }
+
+  // Age/facing live only on the per-listing detail endpoint, not the bulk
+  // list these suggestions were scored from — fetch it for just this small
+  // visible batch (cached, so re-showing a card is instant).
+  await Promise.all(batch.map(async s => {
+    if (s.p._facing !== undefined) return;
+    const detail = await fetchPropertyDetail(s.p.id).catch(() => null);
+    applyDetail(s.p, detail);
+  }));
+
+  container.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0">You might also want to compare</h3>
+      ${n > 3 ? '<button class="icon-btn" id="refreshSuggestBtn" style="padding:6px 14px">↻ Refresh</button>' : ""}
+    </div>
+    <div class="grid">${batch.map(s => suggestCardHtml(s.p, s.why)).join("")}</div>
+  `;
+
+  wireCardOverlaysIn(container);
+
+  // Checking "Compare" on a suggestion adds it to the comparison — reopen
+  // the modal so the table/suggestions refresh around the new set.
+  container.querySelectorAll(".compare-toggle").forEach(cb => {
+    cb.addEventListener("change", () => {
+      if (!cb.checked) return;
+      const id = parseInt(cb.dataset.id);
+      allPropertiesById[id] = allProps.find(p => p.id === id) || allPropertiesById[id];
+      openCompareModal();
+    });
+  });
+
+  // Note: clicking through to preview a suggestion (opens in a new tab via
+  // wireCardOverlaysIn's mark-seen handler) deliberately does NOT remove it
+  // from this batch — that felt like the recommendation vanished out from
+  // under you just for looking. It naturally drops out of the pool next
+  // time suggestions are recomputed (already-seen listings are excluded),
+  // and the ✕ button below is the only immediate removal.
+
+  // Explicit manual override — dismiss a suggestion outright regardless of
+  // whether it's been clicked through, e.g. one already marked seen earlier
+  // that surfaced again and just isn't wanted.
+  container.querySelectorAll("[data-dismiss-id]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = parseInt(btn.dataset.dismissId);
+      lastScoredSuggestions = lastScoredSuggestions.filter(s => s.p.id !== id);
+      renderSuggestionBatch(container, allProps);
+    });
+  });
+
+  const refreshBtn = document.getElementById("refreshSuggestBtn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      suggestOffset = (suggestOffset + 3) % lastScoredSuggestions.length;
+      renderSuggestionBatch(container, allProps);
+    });
+  }
+}
+
+async function openCompareModal() {
+  const props = [...compareIds].map(id => allPropertiesById[id]).filter(Boolean);
+  const body = document.getElementById("compareModalBody");
+  if (!props.length) {
+    body.innerHTML = '<div class="empty">Nothing selected yet — tick "Compare" on a few cards first.</div>';
+  } else {
+    body.innerHTML = `
+      <table class="compare-table">
+        <tr>
+          <th></th>
+          ${props.map(p => `
+            <td>
+              <a href="${p.property_url}" target="_blank" rel="noopener" class="mark-seen" data-id="${p.id}">
+                <img src="${p.main_image && p.main_image['720'] ? p.main_image['720'] : ''}">
+                <div style="font-weight:600">${escapeHtml(p.property_title || '')}</div>
+              </a>
+              <button class="compare-remove" data-remove-id="${p.id}">Remove</button>
+            </td>`).join("")}
+        </tr>
+        ${COMPARE_ROWS.map(([label, fn]) => `
+          <tr><th>${label}</th>${props.map(p => `<td>${escapeHtml(String(fn(p)))}</td>`).join("")}</tr>
+        `).join("")}
+      </table>
+      <div class="suggest-section" id="suggestSection">
+        <div class="loading" style="padding:20px 0">Finding similar homes…</div>
+      </div>
+    `;
+    body.querySelectorAll(".mark-seen").forEach(el => {
+      el.addEventListener("click", () => markSeen(parseInt(el.dataset.id)));
+    });
+    body.querySelectorAll("[data-remove-id]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        compareIds.delete(parseInt(btn.dataset.removeId));
+        persistCompare();
+        updateCompareTray();
+        openCompareModal();
+        document.querySelectorAll(`.compare-toggle[data-id="${btn.dataset.removeId}"]`).forEach(cb => cb.checked = false);
+      });
+    });
+
+    // Auto-suggest similar homes based on the current comparison set, and
+    // keep it in sync: adding a suggestion re-renders the whole modal
+    // (table + a freshly recomputed suggestion list) immediately.
+    await loadProjects();
+    const allProps = (await loadAllForSaleProperties()).filter(p => p.price);
+    allProps.forEach(p => { p._project = (p.project && projectsById[p.project.id]) || null; });
+    lastScoredSuggestions = scoreSuggestions(props, allProps);
+    suggestOffset = 0;
+    const suggestSection = document.getElementById("suggestSection");
+    if (suggestSection) await renderSuggestionBatch(suggestSection, allProps);
+  }
+  document.getElementById("compareModal").classList.add("visible");
+}
+
+function openListModal() {
+  const props = [...listIds].map(id => allPropertiesById[id]).filter(Boolean);
+  const body = document.getElementById("listModalBody");
+  if (!props.length) {
+    body.innerHTML = '<div class="empty">No saved homes yet — tap ♡ on a card to save it here.</div>';
+  } else {
+    body.innerHTML = `<div class="list-grid">${props.map(cardHtml).join("")}</div>`;
+    wireCardOverlaysIn(body);
+  }
+  document.getElementById("listModal").classList.add("visible");
+}
+
+function wireCardOverlaysIn(container) {
+  wireCarousels(container);
+  container.querySelectorAll(".mark-seen").forEach(el => {
+    el.addEventListener("click", () => markSeen(parseInt(el.dataset.id)));
+  });
+  container.querySelectorAll(".compare-toggle").forEach(el => {
+    el.addEventListener("click", e => e.stopPropagation());
+    el.addEventListener("change", () => {
+      const id = parseInt(el.dataset.id);
+      if (el.checked) compareIds.add(id); else compareIds.delete(id);
+      persistCompare();
+      updateCompareTray();
+    });
+  });
+  container.querySelectorAll(".save-toggle").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = parseInt(el.dataset.id);
+      listIds.delete(id);
+      persistList();
+      updateListBadge();
+      openListModal();
+    });
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function refreshChipStates() {
+  const priceVal = document.querySelector(".price_max").value;
+  const bedroomsVal = document.querySelector(".bedrooms").value;
+  const floorMinVal = document.getElementById("floorMin").value;
+  const acresVal = document.getElementById("acresMin").value;
+  const checkedAmenities = new Set(getCheckedAmenities());
+
+  document.querySelectorAll("#bhkChips .chip").forEach(c => c.classList.toggle("active", c.dataset.bedrooms === bedroomsVal));
+  document.querySelectorAll("#priceChips .chip").forEach(c => c.classList.toggle("active", c.dataset.price === priceVal));
+  document.getElementById("highFloorChip").classList.toggle("active", floorMinVal === "5");
+  document.getElementById("lowDensityChip").classList.toggle("active", acresVal === "5");
+  document.getElementById("vastuChip").classList.toggle("active", vastuOnly);
+  document.getElementById("hasPhotosChip").classList.toggle("active", document.getElementById("hasPhotosOnly").checked);
+  document.querySelectorAll("[data-amenity-chip]").forEach(c => c.classList.toggle("active", checkedAmenities.has(c.dataset.amenityChip)));
+  document.getElementById("amenitiesCount").textContent = checkedAmenities.size ? `(${checkedAmenities.size})` : "";
+}
+
+// Quick-filter chips: single-select toggle for BHK/price, plain toggles for the rest.
+document.querySelectorAll("#bhkChips .chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const input = document.querySelector(".bedrooms");
+    input.value = input.value === chip.dataset.bedrooms ? "" : chip.dataset.bedrooms;
+    runSearch();
+  });
+});
+document.querySelectorAll("#priceChips .chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const input = document.querySelector(".price_max");
+    input.value = input.value === chip.dataset.price ? "" : chip.dataset.price;
+    runSearch();
+  });
+});
+document.getElementById("highFloorChip").addEventListener("click", () => {
+  const input = document.getElementById("floorMin");
+  input.value = input.value === "5" ? "" : "5";
+  runSearch();
+});
+document.getElementById("lowDensityChip").addEventListener("click", () => {
+  const select = document.getElementById("acresMin");
+  select.value = select.value === "5" ? "" : "5";
+  runSearch();
+});
+document.getElementById("vastuChip").addEventListener("click", () => {
+  vastuOnly = !vastuOnly;
+  runSearch();
+});
+document.getElementById("hasPhotosChip").addEventListener("click", () => {
+  const cb = document.getElementById("hasPhotosOnly");
+  cb.checked = !cb.checked;
+  runSearch();
+});
+document.querySelectorAll("[data-amenity-chip]").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const cb = document.querySelector(`[data-amenity="${chip.dataset.amenityChip}"]`);
+    cb.checked = !cb.checked;
+    runSearch();
+  });
+});
+
+document.getElementById("searchBtn").addEventListener("click", runSearch);
+document.getElementById("acresMin").addEventListener("change", runSearch);
+document.getElementById("sortBy").addEventListener("change", runSearch);
+document.querySelectorAll("[data-amenity]").forEach(el => el.addEventListener("change", runSearch));
+document.getElementById("hasPhotosOnly").addEventListener("change", runSearch);
+document.getElementById("societyFilterInput").addEventListener("input", () => renderSocietyPicker());
+document.getElementById("societySortToggle").addEventListener("click", e => {
+  e.preventDefault();
+  societySortMode = societySortMode === "count" ? "acres" : "count";
+  document.getElementById("societySortNote").firstChild.textContent =
+    societySortMode === "count" ? "Sorted by listings on platform · " : "Sorted by society size · ";
+  e.target.textContent = societySortMode === "count" ? "sort by size instead" : "sort by listings instead";
+  renderSocietyPicker();
+});
+[".search", ".price_max", ".bedrooms"].forEach(sel => {
+  document.querySelector(sel).addEventListener("keydown", e => {
+    if (e.key === "Enter") runSearch();
+  });
+});
+document.querySelector(".search").addEventListener("input", e => renderSearchSuggestions(e.target.value.trim()));
+document.addEventListener("click", e => {
+  if (!e.target.closest(".search-wrap")) document.getElementById("searchSuggestions").classList.remove("visible");
+});
+document.getElementById("floorMin").addEventListener("keydown", e => { if (e.key === "Enter") runSearch(); });
+document.getElementById("floorMax").addEventListener("keydown", e => { if (e.key === "Enter") runSearch(); });
+
+// Compare tray + modals
+document.getElementById("compareGoBtn").addEventListener("click", openCompareModal);
+document.getElementById("closeCompareModal").addEventListener("click", () => document.getElementById("compareModal").classList.remove("visible"));
+document.getElementById("compareModal").addEventListener("click", e => { if (e.target.id === "compareModal") e.target.classList.remove("visible"); });
+document.getElementById("compareClearBtn").addEventListener("click", () => {
+  compareIds.clear();
+  persistCompare();
+  updateCompareTray();
+  document.querySelectorAll(".compare-toggle").forEach(cb => cb.checked = false);
+});
+
+document.getElementById("refreshLink").addEventListener("click", e => { e.preventDefault(); runSearch(true); });
+document.getElementById("listBtn").addEventListener("click", openListModal);
+document.getElementById("closeListModal").addEventListener("click", () => document.getElementById("listModal").classList.remove("visible"));
+document.getElementById("listModal").addEventListener("click", e => { if (e.target.id === "listModal") e.target.classList.remove("visible"); });
+
+// Restore filters saved from the last session (e.g. if this tab got reused after opening a listing).
+if (savedFilters.search) document.querySelector(".search").value = savedFilters.search;
+if (savedFilters.price_max) document.querySelector(".price_max").value = savedFilters.price_max;
+if (savedFilters.bedrooms) document.querySelector(".bedrooms").value = savedFilters.bedrooms;
+if (savedFilters.floorMin) document.getElementById("floorMin").value = savedFilters.floorMin;
+if (savedFilters.floorMax) document.getElementById("floorMax").value = savedFilters.floorMax;
+if (savedFilters.acresMin) document.getElementById("acresMin").value = savedFilters.acresMin;
+if (savedFilters.sortBy) document.getElementById("sortBy").value = savedFilters.sortBy;
+if (savedFilters.vastuOnly) vastuOnly = true;
+if (savedFilters.hasPhotosOnly) document.getElementById("hasPhotosOnly").checked = true;
+(savedFilters.amenities || []).forEach(a => {
+  const cb = document.querySelector(`[data-amenity="${a}"]`);
+  if (cb) cb.checked = true;
+});
+
+// The sidebar sticks below the sticky header+chip bar, whose height varies
+// (chip bar wraps, notes appear/disappear) — measure it instead of guessing.
+function adjustStickyOffsets() {
+  const stickyTop = document.querySelector(".sticky-top");
+  const aside = document.querySelector("aside.filters");
+  const h = stickyTop.offsetHeight;
+  aside.style.top = `${h}px`;
+  aside.style.maxHeight = `calc(100vh - ${h}px)`;
+}
+window.addEventListener("resize", adjustStickyOffsets);
+
+updateListBadge();
+refreshChipStates();
+adjustStickyOffsets();
+runSearch().then(adjustStickyOffsets);
+</script>
+
+</body>
+</html>
