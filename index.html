@@ -500,10 +500,8 @@
   @media (max-width: 760px) {
     .mobile-only { display: block; }
     header { padding: 10px 14px; gap: 10px; flex-wrap: wrap; }
-    .top-row { gap: 8px; }
-    .search-wrap { flex: 1 1 100%; min-width: 0; }
-    .top-row input.price_max, .top-row input.bedrooms { display: none; } /* covered by the price/BHK chips + Filters drawer */
-    .top-row button.primary { width: 100%; order: 10; }
+    .logo { flex: 1 1 100%; order: -1; } /* own row, above Filters/My List */
+    .top-row { display: none; } /* search box+button+price+BHK: covered by chips + the Filters drawer's society search */
     .header-actions { width: 100%; order: 9; display: flex; gap: 8px; }
     .header-actions button { flex: 1; }
     .chip-bar { padding: 10px 14px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -528,7 +526,7 @@
       padding: 0 18px 90px;
       overflow-y: auto;
     }
-    aside.filters.mobile-open { display: block; }
+    aside.filters.mobile-open { display: block; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
     .mobile-filters-backdrop.visible {
       display: block;
       position: fixed;
@@ -569,8 +567,77 @@
 
     .modal-backdrop { padding: 0; }
     .modal { border-radius: 0; max-height: 100vh; height: 100%; }
+    .modal-backdrop:has(.lead-modal) { padding: 20px; align-items: center; }
+    .lead-modal { border-radius: 20px; max-height: none; height: auto; }
     table.compare-table th { width: auto; min-width: 90px; }
   }
+
+  .lead-modal {
+    max-width: 380px;
+    text-align: center;
+    padding: 32px 28px 24px;
+    position: relative;
+  }
+  .lead-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    border: none;
+    background: var(--bg);
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .lead-emoji { font-size: 40px; line-height: 1; margin-bottom: 8px; }
+  .lead-modal h2 { font-size: 19px; margin: 0 0 8px; }
+  .lead-sub { color: var(--gray); font-size: 13.5px; line-height: 1.4; margin: 0 0 20px; }
+  #leadForm { display: flex; flex-direction: column; gap: 10px; }
+  #leadForm input {
+    padding: 13px 14px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+  #leadForm input:invalid:not(:placeholder-shown) { border-color: #dc2626; }
+  .lead-phone-error { color: #dc2626; font-size: 12px; text-align: left; margin-top: -4px; min-height: 14px; }
+  .lead-submit {
+    background: linear-gradient(135deg, var(--blue), #0b5ed7);
+    padding: 13px 0;
+    font-size: 15px;
+    border-radius: 10px;
+    margin-top: 4px;
+  }
+  .lead-submit:disabled { opacity: 0.6; cursor: default; }
+  .lead-privacy { color: var(--gray); font-size: 11px; margin-top: 14px; }
+
+  .lead-success { display: none; padding: 12px 0 4px; }
+  .lead-success.visible { display: block; }
+  .key-anim {
+    position: relative;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .house-emoji { font-size: 46px; animation: houseSettle 0.5s ease-out 0.55s both; }
+  .key-emoji {
+    position: absolute;
+    font-size: 26px;
+    animation: keySlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes keySlideIn {
+    0%   { transform: translateX(-70px) rotate(-40deg); opacity: 0; }
+    70%  { transform: translateX(2px) rotate(0deg); opacity: 1; }
+    100% { transform: translateX(0) rotate(0deg) scale(0.85); opacity: 1; }
+  }
+  @keyframes houseSettle {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  .lead-success h2 { margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -588,7 +655,19 @@
     <button class="primary" id="searchBtn">Search</button>
   </div>
   <div class="header-actions">
-    <button class="icon-btn mobile-only" id="filtersToggleBtn">☰ Filters</button>
+    <button class="icon-btn mobile-only" id="filtersToggleBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px">
+        <line x1="4" y1="21" x2="4" y2="14"></line>
+        <line x1="4" y1="10" x2="4" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12" y2="3"></line>
+        <line x1="20" y1="21" x2="20" y2="16"></line>
+        <line x1="20" y1="12" x2="20" y2="3"></line>
+        <line x1="1" y1="14" x2="7" y2="14"></line>
+        <line x1="9" y1="8" x2="15" y2="8"></line>
+        <line x1="17" y1="16" x2="23" y2="16"></line>
+      </svg>Filters
+    </button>
     <button class="icon-btn" id="listBtn">♡ My List<span class="badge" id="listBadge">0</span></button>
   </div>
 </header>
@@ -712,6 +791,31 @@
       <button id="closeListModal">✕</button>
     </div>
     <div id="listModalBody"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="leadModal">
+  <div class="modal lead-modal">
+    <button id="closeLeadModal" class="lead-close">✕</button>
+    <div id="leadFormView">
+      <div class="lead-emoji">👋</div>
+      <h2>One quick thing before you go</h2>
+      <p class="lead-sub">Drop your number and we'll get in touch about this home — asked once per visit, that's it.</p>
+      <form id="leadForm">
+        <input type="text" id="leadName" placeholder="Name (optional)" autocomplete="name">
+        <input type="tel" id="leadPhone" placeholder="Phone number (e.g. 98765 43210)" required inputmode="tel" autocomplete="tel">
+        <div class="lead-phone-error" id="leadPhoneError"></div>
+        <button type="submit" class="primary lead-submit" id="leadSubmitBtn">Submit</button>
+      </form>
+      <div class="lead-privacy">We'll only use this to follow up on your enquiry.</div>
+    </div>
+    <div id="leadSuccessView" class="lead-success">
+      <div class="key-anim">
+        <span class="house-emoji">🏠</span>
+        <span class="key-emoji">🔑</span>
+      </div>
+      <h2 id="leadSuccessTitle">Thanks! We'll get in touch shortly.</h2>
+    </div>
   </div>
 </div>
 
@@ -1209,18 +1313,198 @@ function markSeen(id) {
   });
 }
 
+// Lead capture: on mobile, tapping a listing no longer sends the visitor
+// off to ivy.homes at all — it captures their number instead, and keeps
+// them in-app. First tap ever: quick phone form, then a thank-you with a
+// key-into-house animation. Every tap after that (lead already on file):
+// same animation immediately, no form, still no navigation.
+const LEAD_FORM_ENDPOINT = "https://formspree.io/f/xaewpgld";
+const LEAD_SESSION_KEY = "hf_lead_asked";   // sessionStorage: "already asked this visit"
+const LEAD_NAME_KEY = "hf_lead_name";       // localStorage: persists across visits, for auto-fill
+const LEAD_PHONE_KEY = "hf_lead_phone";
+let pendingLead = null; // { href, propertyId, propertyTitle }
+let leadSuccessTimer = null;
+
+function isMobileView() { return window.innerWidth <= 760; }
+// sessionStorage, same safe-fallback pattern as safeStorage above — some
+// contexts (privacy modes, sandboxed iframes) throw on any Storage access.
+function getSessionSafe(k) { try { return sessionStorage.getItem(k); } catch (e) { return memoryStore[k] ?? null; } }
+function setSessionSafe(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { memoryStore[k] = v; } }
+function hasAskedThisVisit() { return !!getSessionSafe(LEAD_SESSION_KEY); }
+
+// Real Indian mobile validation: 10 digits, first digit 6-9, optional +91/91/0
+// prefix — not just "is it 7-15 characters of digit-like symbols".
+function isValidIndianPhone(raw) {
+  const digits = raw.replace(/[\s\-()]/g, "");
+  return /^(?:\+91|91|0)?[6-9]\d{9}$/.test(digits);
+}
+
+// Builds a plain-English snapshot of the active search — sent with every
+// lead so whoever follows up knows what the visitor was actually looking
+// for (price range, BHK, locality, amenities, etc), not just which listing.
+function summarizeActiveFilters() {
+  const s = getFilterState();
+  const parts = [];
+  if (s.search) parts.push(`search "${s.search}"`);
+  if (s.price_max) parts.push(`under ₹${s.price_max} Cr`);
+  if (s.bedrooms) parts.push(`${s.bedrooms} BHK`);
+  if (s.floorMin || s.floorMax) parts.push(`floor ${s.floorMin || "any"}-${s.floorMax || "any"}`);
+  if (s.acresMin) parts.push(`${s.acresMin}+ acre society`);
+  if (s.hasPhotosOnly) parts.push("has real photos");
+  if (s.vastuOnly) parts.push("Vastu (East/North facing)");
+  if (s.amenities.length) parts.push(s.amenities.map(a => AMENITY_LABELS[a] || a).join("/"));
+  if (selectedSocieties.size) {
+    const names = societyIndex.filter(soc => selectedSocieties.has(soc.projectId)).map(soc => soc.name);
+    if (names.length) parts.push(`societies: ${names.join(", ")}`);
+  }
+  if (s.sortBy) parts.push(`sorted by ${s.sortBy.replace(/_/g, " ")}`);
+  return parts.length ? parts.join(" · ") : "no filters applied";
+}
+
+function resetLeadModalViews() {
+  document.getElementById("leadFormView").style.display = "";
+  document.getElementById("leadSuccessView").classList.remove("visible");
+}
+
+function openLeadModal(href, propertyId) {
+  const property = propertyId != null ? allPropertiesById[propertyId] : null;
+  pendingLead = { href, propertyId, propertyTitle: property ? property.property_title : null };
+
+  resetLeadModalViews();
+  // Auto-fill from whatever was submitted last time (persists across visits,
+  // unlike the per-session "already asked" gate below).
+  document.getElementById("leadName").value = safeStorage.getItem(LEAD_NAME_KEY) || "";
+  document.getElementById("leadPhone").value = safeStorage.getItem(LEAD_PHONE_KEY) || "";
+  document.getElementById("leadPhoneError").textContent = "";
+  document.getElementById("leadModal").classList.add("visible");
+}
+function closeLeadModal() {
+  document.getElementById("leadModal").classList.remove("visible");
+  pendingLead = null;
+  if (leadSuccessTimer) { clearTimeout(leadSuccessTimer); leadSuccessTimer = null; }
+}
+
+// Shows the key-into-house thank-you view (replaying the CSS animation each
+// time by re-triggering it), auto-closing after a couple seconds.
+function showLeadSuccess(message) {
+  document.getElementById("leadFormView").style.display = "none";
+  const successView = document.getElementById("leadSuccessView");
+  document.getElementById("leadSuccessTitle").textContent = message;
+  successView.classList.remove("visible");
+  void successView.offsetWidth; // force reflow so the animation replays
+  successView.classList.add("visible");
+  document.getElementById("leadModal").classList.add("visible");
+
+  if (leadSuccessTimer) clearTimeout(leadSuccessTimer);
+  leadSuccessTimer = setTimeout(closeLeadModal, 2200);
+}
+
+// Capture phase so this runs before the anchor's own navigation; only
+// preventDefault (not stopPropagation), so markSeen's own click listener on
+// the same element still fires normally. Mobile taps never navigate to
+// ivy.homes anymore — first tap gets the form, every tap after gets the
+// same "already have your number" animation.
+document.addEventListener("click", e => {
+  const anchor = e.target.closest(".mark-seen");
+  if (!anchor || !isMobileView()) return;
+  e.preventDefault();
+  if (hasAskedThisVisit()) {
+    showLeadSuccess("We've got your number — we'll be in touch!");
+    return;
+  }
+  const propertyId = anchor.dataset.id ? parseInt(anchor.dataset.id) : null;
+  openLeadModal(anchor.href, propertyId);
+}, true);
+
+document.getElementById("closeLeadModal").addEventListener("click", closeLeadModal);
+document.getElementById("leadModal").addEventListener("click", e => {
+  if (e.target.id === "leadModal") closeLeadModal();
+});
+
+document.getElementById("leadForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const name = document.getElementById("leadName").value.trim();
+  const phoneRaw = document.getElementById("leadPhone").value.trim();
+  const errorEl = document.getElementById("leadPhoneError");
+
+  if (!isValidIndianPhone(phoneRaw)) {
+    errorEl.textContent = "Enter a valid 10-digit Indian mobile number.";
+    return;
+  }
+  errorEl.textContent = "";
+
+  const { href, propertyId, propertyTitle } = pendingLead || {};
+  const btn = document.getElementById("leadSubmitBtn");
+
+  setSessionSafe(LEAD_SESSION_KEY, "1");
+  safeStorage.setItem(LEAD_NAME_KEY, name);
+  safeStorage.setItem(LEAD_PHONE_KEY, phoneRaw);
+
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+  try {
+    await fetch(LEAD_FORM_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        name,
+        phone: phoneRaw,
+        property_title: propertyTitle || null,
+        property_id: propertyId || null,
+        property_url: href || null,
+        active_filters: summarizeActiveFilters(),
+        page: location.href,
+      }),
+    });
+  } catch (err) {
+    // Lead is already saved locally (session flag + autofill values) even
+    // if the network request failed — don't leave the user stuck.
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Submit";
+    showLeadSuccess(name ? `Thanks ${name}! We'll get in touch shortly.` : "Thanks! We'll get in touch shortly.");
+  }
+});
+
+function advanceCarousel(media, dir) {
+  const images = JSON.parse(media.dataset.images);
+  if (!images.length) return;
+  const idx = (parseInt(media.dataset.idx) + dir + images.length) % images.length;
+  media.dataset.idx = idx;
+  media.querySelector(".card-img").src = images[idx];
+  media.querySelectorAll(".carousel-dot").forEach((dot, i) => dot.classList.toggle("active", i === idx));
+}
+
 function wireCarousels(root) {
   root.querySelectorAll(".carousel-arrow").forEach(btn => {
     btn.addEventListener("click", e => {
       e.preventDefault();
       e.stopPropagation();
-      const media = btn.closest(".card-media");
-      const images = JSON.parse(media.dataset.images);
-      if (!images.length) return;
-      const idx = (parseInt(media.dataset.idx) + parseInt(btn.dataset.dir) + images.length) % images.length;
-      media.dataset.idx = idx;
-      media.querySelector(".card-img").src = images[idx];
-      media.querySelectorAll(".carousel-dot").forEach((dot, i) => dot.classList.toggle("active", i === idx));
+      advanceCarousel(btn.closest(".card-media"), parseInt(btn.dataset.dir));
+    });
+  });
+
+  // Touch swipe (mobile) — only reacts to a clearly horizontal drag, so it
+  // doesn't fight the page's own vertical scroll, and a plain tap (no
+  // movement) still falls through to the anchor's normal click/navigate.
+  root.querySelectorAll(".card-media").forEach(media => {
+    let startX = 0, startY = 0, tracking = false;
+    media.addEventListener("touchstart", e => {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      tracking = true;
+    }, { passive: true });
+    media.addEventListener("touchend", e => {
+      if (!tracking) return;
+      tracking = false;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(dy)) return; // not a horizontal swipe
+      const images = JSON.parse(media.dataset.images || "[]");
+      if (images.length < 2) return;
+      advanceCarousel(media, dx < 0 ? 1 : -1); // swipe left → next photo
     });
   });
 }
@@ -1624,7 +1908,14 @@ if (savedFilters.hasPhotosOnly) document.getElementById("hasPhotosOnly").checked
 function adjustStickyOffsets() {
   const stickyTop = document.querySelector(".sticky-top");
   const aside = document.querySelector("aside.filters");
-  if (window.innerWidth <= 760) return; // mobile drawer is fixed/full-screen via CSS, not this offset
+  if (window.innerWidth <= 760) {
+    // Mobile drawer is position:fixed/inset:0 via CSS — inline top/max-height
+    // left over from a wider viewport would override that and break its
+    // scroll area, so explicitly clear them rather than just skipping.
+    aside.style.top = "";
+    aside.style.maxHeight = "";
+    return;
+  }
   const h = stickyTop.offsetHeight;
   aside.style.top = `${h}px`;
   aside.style.maxHeight = `calc(100vh - ${h}px)`;
