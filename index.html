@@ -482,6 +482,85 @@
     margin-top: 8px;
     padding: 0 2px;
   }
+
+  .mobile-only { display: none; }
+  .mobile-filters-backdrop { display: none; }
+  .mobile-filters-header { display: none; }
+
+  /* Mobile: single card per row, and the sidebar becomes a full-screen
+     "Filters" drawer (Zillow/Redfin pattern) instead of a fixed column —
+     a narrow always-visible sidebar has no room to be useful here. */
+  @media (max-width: 760px) {
+    .mobile-only { display: block; }
+    header { padding: 10px 14px; gap: 10px; flex-wrap: wrap; }
+    .top-row { gap: 8px; }
+    .top-row input.price_max, .top-row input.bedrooms { flex: 1; width: auto !important; min-width: 0; }
+    .top-row button.primary { width: 100%; order: 10; }
+    .header-actions { width: 100%; order: 9; display: flex; gap: 8px; }
+    .header-actions button { flex: 1; }
+    .chip-bar { padding: 10px 14px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .chip-bar .chip-divider { flex-shrink: 0; }
+    .chip-bar .chip { flex-shrink: 0; }
+    #vastuNote { display: none; } /* redundant with the drawer on mobile */
+
+    main { padding: 16px; }
+    .grid, .list-grid { grid-template-columns: 1fr; }
+    .suggest-section .grid { grid-template-columns: 1fr; }
+
+    aside.filters {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      width: 100%;
+      max-height: 100%;
+      border-right: none;
+      padding: 0 18px 90px;
+      overflow-y: auto;
+    }
+    aside.filters.mobile-open { display: block; }
+    .mobile-filters-backdrop.visible {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 99;
+    }
+    .mobile-filters-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      padding: 16px 0;
+      margin-bottom: 4px;
+      font-weight: 700;
+      font-size: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mobile-filters-header button {
+      border: none;
+      background: var(--bg);
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #filtersApplyBtn {
+      position: fixed;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      z-index: 101;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .modal-backdrop { padding: 0; }
+    .modal { border-radius: 0; max-height: 100vh; height: 100%; }
+    table.compare-table th { width: auto; min-width: 90px; }
+  }
 </style>
 </head>
 <body>
@@ -499,6 +578,7 @@
     <button class="primary" id="searchBtn">Search</button>
   </div>
   <div class="header-actions">
+    <button class="icon-btn mobile-only" id="filtersToggleBtn">☰ Filters</button>
     <button class="icon-btn" id="listBtn">♡ My List<span class="badge" id="listBadge">0</span></button>
   </div>
 </header>
@@ -531,7 +611,12 @@
 </div>
 
 <div class="layout">
-  <aside class="filters">
+  <div class="mobile-filters-backdrop" id="mobileFiltersBackdrop"></div>
+  <aside class="filters" id="filtersAside">
+    <div class="mobile-filters-header mobile-only">
+      <span>Filters</span>
+      <button id="filtersCloseBtn">✕</button>
+    </div>
     <h3>Floor</h3>
     <div class="range-row">
       <input type="number" id="floorMin" placeholder="Min">
@@ -582,6 +667,7 @@
       <option value="area_desc">Area: largest first</option>
       <option value="acres_desc">Society size: largest first</option>
     </select>
+    <button class="primary mobile-only" id="filtersApplyBtn" style="width:100%;margin-top:20px">Show homes</button>
   </aside>
 
   <main>
@@ -1510,11 +1596,27 @@ if (savedFilters.hasPhotosOnly) document.getElementById("hasPhotosOnly").checked
 function adjustStickyOffsets() {
   const stickyTop = document.querySelector(".sticky-top");
   const aside = document.querySelector("aside.filters");
+  if (window.innerWidth <= 760) return; // mobile drawer is fixed/full-screen via CSS, not this offset
   const h = stickyTop.offsetHeight;
   aside.style.top = `${h}px`;
   aside.style.maxHeight = `calc(100vh - ${h}px)`;
 }
 window.addEventListener("resize", adjustStickyOffsets);
+
+function openMobileFilters() {
+  document.getElementById("filtersAside").classList.add("mobile-open");
+  document.getElementById("mobileFiltersBackdrop").classList.add("visible");
+  document.body.style.overflow = "hidden";
+}
+function closeMobileFilters() {
+  document.getElementById("filtersAside").classList.remove("mobile-open");
+  document.getElementById("mobileFiltersBackdrop").classList.remove("visible");
+  document.body.style.overflow = "";
+}
+document.getElementById("filtersToggleBtn").addEventListener("click", openMobileFilters);
+document.getElementById("filtersCloseBtn").addEventListener("click", closeMobileFilters);
+document.getElementById("mobileFiltersBackdrop").addEventListener("click", closeMobileFilters);
+document.getElementById("filtersApplyBtn").addEventListener("click", () => { runSearch(); closeMobileFilters(); });
 
 updateListBadge();
 refreshChipStates();
