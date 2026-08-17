@@ -147,6 +147,12 @@
   .society-checklist .checkbox-row { font-size: 13px; padding: 4px 0; }
   .society-checklist .checkbox-row span { color: var(--gray); font-size: 11.5px; }
   .society-checklist .empty-note { color: var(--gray); font-size: 12.5px; padding: 6px 2px; }
+  .society-select-all {
+    padding: 2px 2px 6px;
+    margin-bottom: 4px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .society-select-all a { color: var(--blue); font-size: 12.5px; font-weight: 600; text-decoration: none; }
   aside.filters h3 {
     font-size: 12px;
     text-transform: uppercase;
@@ -505,6 +511,7 @@
 
     main { padding: 16px; }
     .grid, .list-grid { grid-template-columns: 1fr; }
+    .card img { height: 260px; } /* full-width mobile card looked too flat/short at the desktop 180px height */
     .suggest-section .grid { grid-template-columns: 1fr; }
 
     aside.filters {
@@ -1063,7 +1070,14 @@ function renderSocietyPicker() {
     return;
   }
 
-  box.innerHTML = shown.map(s => `
+  const allShownSelected = shown.every(s => selectedSocieties.has(s.projectId));
+  const selectAllRow = filterText ? `
+    <div class="society-select-all">
+      <a href="#" id="societySelectAll">${allShownSelected ? "Clear" : "Select all"} ${shown.length} shown</a>
+    </div>
+  ` : "";
+
+  box.innerHTML = selectAllRow + shown.map(s => `
     <label class="checkbox-row">
       <input type="checkbox" data-society-id="${s.projectId}" ${selectedSocieties.has(s.projectId) ? "checked" : ""}>
       ${escapeHtml(s.name)} <span>— ${s.count} home${s.count === 1 ? "" : "s"}${s.acres ? `, ${s.acres} ac` : ""}</span>
@@ -1080,6 +1094,17 @@ function renderSocietyPicker() {
       runSearch();
     });
   });
+
+  const selectAllLink = document.getElementById("societySelectAll");
+  if (selectAllLink) {
+    selectAllLink.addEventListener("click", e => {
+      e.preventDefault();
+      shown.forEach(s => allShownSelected ? selectedSocieties.delete(s.projectId) : selectedSocieties.add(s.projectId));
+      persistSocieties();
+      renderSocietyPicker();
+      runSearch();
+    });
+  }
 }
 
 function renderSearchSuggestions(query) {
